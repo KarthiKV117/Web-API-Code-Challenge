@@ -1,0 +1,381 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title></title>
+    @*<script src="~/Scripts/jquery-1.10.2.min.js"></script>*@
+    @*<link type="text/css" rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+        <script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+        <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+        <script src="~/Scripts/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rateYo/2.3.2/jquery.rateyo.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/rateYo/2.3.2/jquery.rateyo.min.js"></script>*@
+
+    @Scripts.Render("~/bundles/jquery")
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/bootstrap")
+
+
+    <style type="text/css">
+        .hide {
+            visibility: hidden;
+        }
+
+        table {
+            border-color: #000000;
+        }
+
+            table th {
+                background-color: #808080;
+                border: 1px solid #000 !important;
+            }
+
+            table td {
+                border: 1px solid #000 !important;
+            }
+
+        .container {
+            background-color: #e2dbd4;
+        }
+        /*#tblReviews {
+                    width: 100%;
+                }
+        */
+    </style>
+    <script type="text/javascript">
+
+
+        $(document).ready(function () {
+            debugger;
+            $("#rateYo").rateYo({
+                starWidth: "25px",
+                starHeight: "25px",
+                fullStar: true,
+                multiColor: {
+                    "startColor": "#FF0000", //RED
+                    "endColor": "#00FF00"  //GREEN
+                },
+                filled: 'glyphicon glyphicon-heart-empty',
+                onSet: function (rating, rateYoInstance) {
+                    rating = Math.ceil(rating);
+                    $('#rating_input').val(rating);//setting up rating value to hidden field
+                    //alert("Rating is set to: " + rating);
+                }
+            });
+
+            $("#rateYo1").rateYo({
+                starWidth: "25px",
+                starHeight: "25px",
+                fullStar: true,
+                multiColor: {
+                    "startColor": "#FF0000", //RED
+                    "endColor": "#00FF00"  //GREEN
+                },
+                filled: 'glyphicon glyphicon-heart-empty',
+                onSet: function (rating, rateYoInstance) {
+                    rating = Math.ceil(rating);
+                    $('#rating_input1').val(rating);//setting up rating value to hidden field
+                    //alert("Rating is set to: " + rating);
+                }
+            });
+
+            $('#panel').hide();
+            $('#rating').hide();
+            $('#comment').hide();
+            $('#user').hide();
+            $('#btnUpdate').hide();
+            debugger;
+            $.ajax({
+                type: "get",
+                url: "http://localhost:54832/Api/Products",
+                contentType: "application/json;charset=utf-8",
+                dataType: "json",
+                data: {},
+                success: function (result) {
+                    $.each(result, function (i) {
+                        debugger;
+                        $('#ddlProducts').append($('<option></option>').val(result[i].Product_Id).html(result[i].Title));
+
+                    });
+                },
+                failure: function () {
+                    alert("Error");
+                }
+            });
+
+            $("#btnGetReviews").click(function () {
+                debugger;
+                var id = $("#ddlProducts").val();
+                $.ajax({
+                    type: "get",
+                    url: "http://localhost:54832/Api/Products",
+                    contentType: "application/json;charset=utf-8",
+                    dataType: "json",
+                    data: { id: id },
+                    success: function (result) {
+                        debugger;
+                        $('#tblReviews').find('tbody').remove();
+                        $.map(result, function (product) {
+                            var key = 1;
+                            $('<tr><td>' + product.Rating + '</td> <td>' + product.Comment + ' </td> <td>' + product.User + ' </td><td><button class="edit btn btn-primary">Edit</button> &nbsp;&nbsp; <button class="delete btn btn-primary">Delete</button></td><td class="hide">' + product.Reviews_Id + '</td><td class="hide">' + product.Product_Id + '</td></tr>').appendTo("#tblReviews");
+                        });
+                    },
+                    failure: function () {
+                        alert("Error");
+                    }
+                });
+            });
+
+            var table = $('#tblReviews');
+            $(table).on('click', '.edit', function () {
+                debugger;
+                $('#panel').show();
+                var reviewID = $(this).closest("tr").find('td:eq(4)').text();
+                $("#hdnreviewid").val(reviewID);
+
+                var ProductID = $(this).closest("tr").find('td:eq(5)').text();
+                $("#hdnproductid").val(ProductID);
+
+                //var rate = $(this).closest("tr").find('td:eq(0)').text();
+                //$("#rating").val(rate);
+                //$('#rating').show();
+
+                var comment = $(this).closest("tr").find('td:eq(1)').text();
+                $('#comment').val(comment);
+                $('#comment').show();
+
+                var user = $(this).closest("tr").find('td:eq(2)').text();
+                $('#user').val(user);
+                $('#user').show();
+
+                $('#btnUpdate').val("Update");
+                $('#btnUpdate').show();
+            });
+
+            $(table).on('click', '.delete', function () {
+                debugger;
+                var Reviews_Id = $(this).closest("tr").find('td:eq(4)').text();
+                $("#hdnreviewid").val(Reviews_Id);
+
+                var id = $("#hdnreviewid").val();
+                $.ajax({
+                    type: "Delete",
+                    url: 'http://localhost:54832/Api/Products/' + id,
+                    success: function (data) {
+                        alert('Deleted Successfully');
+                        location.reload();
+                    },
+                    error: function (msg) { alert(msg); }
+                });
+
+            });
+
+            $("#btnUpdate").click(function () {
+                debugger;
+                var Reviews_Id = $("#hdnreviewid").val();
+                var rating = $('#rating_input').val();
+                //var rating = $("#rating").val();
+                var comment = $("#comment").val();
+                var user = $("#user").val();
+                var ProductID = $("#hdnproductid").val();
+                debugger;
+                $.ajax({
+                    type: 'Post',
+                    url: 'http://localhost:54832/Api/Products',
+                    data: JSON.stringify([Reviews_Id, rating, comment, user, ProductID]),
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    success: function (data) {
+                        alert('Updated Successfully');
+                        location.reload();
+                    },
+                    error: function (msg) { alert(msg); }
+                });
+            });
+
+            //function for creating review's record
+            $("#btnAdd").click(function () {
+                debugger;
+                var rating = $('#rating_input1').val();
+                var res = validate();
+                if (res == false) {
+                    return false;
+                }
+                //var review = new Object();
+                //review.Rating = rating
+                //review.Comment = $('#Comment').val();
+                //review.User = $('#User').val();
+                var data = {
+                    User: $('#User').val(),
+                    Comment: $('#Comment').val(),
+                    Rating: rating
+                };
+
+                var id =  $('#ddlProducts').val();
+                var User = $('#User').val();
+                 var Comment = $('#Comment').val();
+                 var Rating = rating;
+                $.ajax({
+                    url: "http://localhost:54832/Api/Products?id=" + id,
+                    data: JSON.stringify([Rating, Comment, User]),
+                    type: "Put",
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    success: function () {
+                        debugger;
+                        alert("Review has been Added");
+                        $('#myModal').modal('hide');
+                    },
+                    error: function (errormessage) {
+                        debugger;
+                        alert(errormessage.responseText);
+                    }
+                });
+            });
+
+            function validate() {
+                var isValid = true;
+
+                if ($('#User').val().trim() == "") {
+                    $('#User').css('border-color', 'Red');
+                    isValid = false;
+                }
+                else {
+                    $('#User').css('border-color', 'lightgrey');
+                }
+                if ($('#Comment').val().trim() == "") {
+                    $('#Comment').css('border-color', 'Red');
+                    isValid = false;
+                }
+                else {
+                    $('#Comment').css('border-color', 'lightgrey');
+                }
+               
+                return isValid;
+            }
+        });
+
+        
+
+        
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <button type="button" id="btnCreate" class="btn btn-primary" data-toggle="modal" data-target="#myModal">Add New Review</button><br /><br />
+    </div>
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">×</button>
+                    <h4 class="modal-title" id="myModalLabel">Create Review</h4>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="Age">User</label>
+                            <input type="text" class="form-control" id="User" placeholder="User" />
+                        </div>
+                        <div class="form-group">
+                            <label for="State">Comment</label>
+                            <input type="text" class="form-control" id="Comment" placeholder="Comment" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Country">Rating</label>
+                            <div style="display:inline-block;" id="rateYo1">
+                            </div>
+                            <input type="hidden" name="rating" id="rating_input1" />
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="btnAdd">Add</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <input type="hidden" id="hdnreviewid" />
+        <input type="hidden" id="hdnproductid" />
+        <div class="row">
+            <div class="col-sm-3">
+                <label>Please select the product:</label>
+            </div>
+            <div class="col-sm-3">
+                <select id="ddlProducts" class="dropdown-header"></select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3">
+                
+            </div>
+            <div class="col-sm-3">
+                <input type="button" class="btn btn-primary" id="btnGetReviews" value="Get Reviews" />
+                @*<input type="button" class="btn btn-primary" id="btnCreate" value="Create Review" />*@
+            </div>
+        </div>
+        <table id="tblReviews" class="table table-bordered table-responsive">
+            <thead>
+                <tr>
+                    <th>Rating</th>
+                    <th>Feedback</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th class="hide">ReviewID</th>
+                    <th class="hide">ProductID</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="panel" class="form-group panel-body">
+            <div class="row">
+                <div class="col-sm-3">
+                </div>
+                <div class="col-sm-3">
+                </div>
+                <div class="col-sm-3">
+                </div>
+                <div class="col-sm-3">
+                    <input type="button" class="btn btn-primary" id="btnUpdate" value="Update" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3">
+                    <p>User: <span class="glyphicon glyphicon-user"></span></p>
+                </div>
+                <div class="col-sm-3">
+                    <input class="form-control" type="text" id="user" value="" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3">
+                    <p>Rating: <span class="glyphicon glyphicon-star"></span></p>
+                </div>
+                <div class="col-sm-3">
+                    <div style="display:inline-block;" id="rateYo">
+                    </div>
+                    <input type="hidden" name="rating" id="rating_input" />
+                    @*<input class="form-control" type="text" id="rating" value="" />*@
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3">
+                    <p>Comments: <span class="glyphicon glyphicon-comment"></span></p>
+                </div>
+                <div class="col-sm-3">
+                    <textarea class="form-control" id="comment" rows="3"> </textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
